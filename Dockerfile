@@ -1,6 +1,7 @@
 FROM rust:1.72.1
 
 WORKDIR /opt/app
+ARG APP_ENV
 
 # install cargo-watch - needs to be root user to do this successfully
 # but still need update permissions on the file for some reason
