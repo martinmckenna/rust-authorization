@@ -18,7 +18,7 @@ fn login() -> Route {
 pub fn routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("")
-            .route("login", login())
-            .route("profile", get_profile()),
+            .route("/login", login())
+            .route("/profile", get_profile()),
     );
 }
