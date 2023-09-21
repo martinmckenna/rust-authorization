@@ -2,6 +2,7 @@ FROM rust:1.72.1
 
 WORKDIR /opt/app
 ARG APP_ENV
+ENV APP_ENV=$APP_ENV
 
 # install cargo-watch - needs to be root user to do this successfully
 # but still need update permissions on the file for some reason
@@ -49,7 +50,6 @@ RUN rm src/*.rs
 # copy the src files to the Docker image with the rust user as the owner
 COPY --chown=$USER:$GROUP ./src ./src
 COPY --chown=$USER:$GROUP ./scripts ./scripts
-COPY --chown=$USER:$GROUP ./.env ./.env
 
 # now build the actual application code
 RUN cargo build --release --locked
@@ -64,8 +64,6 @@ USER "root"
 RUN chmod +x target/release/.cargo-lock
 USER "$USER"
 
-ARG APP_ENV
-
 # finally run the app in production or development mode depending
 # on the .env file we modified
-ENTRYPOINT ["scripts/entrypoint.sh", "$APP_ENV"]
+ENTRYPOINT scripts/entrypoint.sh $APP_ENV
