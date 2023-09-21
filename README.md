@@ -17,12 +17,52 @@
 
 ## Endpoints
 
-Upon running the server, you should have access to a few endpoints
+Upon running the server, you should have access to a few endpoints, which at the moment take no data and return static mock information:
+
+`POST /register`:
+
+```json
+{
+  "username": "string",
+  "token": "string"
+}
+```
+
+`POST /login`:
+
+```json
+{
+  "username": "string",
+  "token": "string"
+}
+```
+
+`POST /logout`:
+
+```json
+{}
+```
 
 `GET /profile`:
 
-returns gibberish for now! check back later
+```json
+{
+  "username": "string"
+}
+```
 
-`POST /login`
+`POST /token/extend`:
 
-returns gibberish for now! check back later
+```json
+{
+  "token": "string"
+}
+```
+
+`GET /users/:username`:
+
+```json
+{
+  "username": "string"
+}
+```
