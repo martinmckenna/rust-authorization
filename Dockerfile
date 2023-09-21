@@ -64,6 +64,8 @@ USER "root"
 RUN chmod +x target/release/.cargo-lock
 USER "$USER"
 
+ARG APP_ENV
+
 # finally run the app in production or development mode depending
 # on the .env file we modified
-ENTRYPOINT scripts/entrypoint.sh $APP_ENV
+ENTRYPOINT ["scripts/entrypoint.sh", "$APP_ENV"]
