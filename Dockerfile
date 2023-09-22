@@ -42,14 +42,22 @@ WORKDIR /opt/app/$APP
 # copy just the dependency files, so these steps can be cached
 COPY ./Cargo.lock ./Cargo.lock
 COPY ./Cargo.toml ./Cargo.toml
+COPY ./migration/Cargo.toml ./migration/Cargo.toml
+COPY ./migration/Cargo.lock ./migration/Cargo.lock
+COPY ./entity/Cargo.toml ./entity/Cargo.toml
+# cargo install needs these since they appear in the root cargo.toml
+# copying these over after the "cargo install" step will cause the step
+# to fail
+COPY --chown=$USER:$GROUP ./entity/src ./entity/src
+COPY --chown=$USER:$GROUP ./migration/src ./migration/src
 
 # now install any dependencies
-RUN cargo build --release --locked
-RUN rm src/*.rs
+RUN cargo install --path . --locked
 
 # copy the src files to the Docker image with the rust user as the owner
 COPY --chown=$USER:$GROUP ./src ./src
 COPY --chown=$USER:$GROUP ./scripts ./scripts
+COPY --chown=$USER:$GROUP ./.env ./.env
 
 # now build the actual application code
 RUN cargo build --release --locked
