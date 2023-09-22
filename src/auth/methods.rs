@@ -17,6 +17,9 @@ struct TokenResponse {
     token: String,
 }
 
+#[derive(Serialize)]
+struct Empty {}
+
 pub async fn get_profile() -> HttpResponse {
     let profile = ProfileResponse {
         username: "dummy-user".to_string(),
@@ -33,7 +36,8 @@ pub async fn login() -> HttpResponse {
 }
 
 pub async fn logout() -> HttpResponse {
-    HttpResponse::Ok().json(web::Json({}))
+    let empty = Empty {};
+    HttpResponse::Ok().json(web::Json(empty))
 }
 
 pub async fn register() -> HttpResponse {
