@@ -1,12 +1,5 @@
 ## Simple Setup Guide
 
-## Develop with Cargo (easier)
-
-1. Install [latest version of Rust on your machine](https://doc.rust-lang.org/book/ch01-01-installation.html#installing-rustup-on-linux-or-macos)
-2. Create a file called `.env` in the root of this project and copy over the contents of `.env.example` to it
-3. Then install `cargo-watch` with `cargo install cargo-watch`
-4. After that, you should be able to run `cargo watch -x run` and the application should install the dependencies, compile the Rust code and be ready to serve requests on `http://localhost:5000`. Additionally, the code will re-compile on code-change, so you won't have to re-compile yourself.
-
 ## Develop With Docker
 
 1. Install latest version of Docker on your machine
