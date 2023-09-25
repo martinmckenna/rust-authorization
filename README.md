@@ -59,3 +59,15 @@ Upon running the server, you should have access to a few endpoints, which at the
   "username": "string"
 }
 ```
+
+## Migrations
+
+The steps to creating a migration and create an entity from it are as follows:
+
+1. First, make sure the `DATABASE_URL` variable is set in your root `.env` file
+2. Then, create the new migration file by running `sea-orm-cli migrate generate "name of migration"`
+   - this will create a shell migration file and update the pointer to the
+     latest migration. now, go ahead and edit the migration file
+3. Run the migrations against the database with `sea-orm-cli migrate up`
+4. After the migrations have been applied, generate the entities with `sea-orm-cli generate entity -o entity/src`
+5. Now, you're ready to start writing Rust code to interact with the database

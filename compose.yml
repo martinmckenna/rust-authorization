@@ -24,7 +24,8 @@ services:
     ports:
       - 5000:5000
     volumes:
-      # - ./migrations:/opt/app/migrations
+      - ./migration:/opt/app/migration
+      - ./entity:/opt/app/entity
       - ./src:/opt/app/rust-auth/src
     depends_on:
       db:
