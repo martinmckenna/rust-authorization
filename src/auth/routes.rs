@@ -20,7 +20,7 @@ fn logout() -> Route {
 }
 
 fn register() -> Route {
-    web::post().to(|| methods::register())
+    web::post().to(methods::register)
 }
 
 fn extend_token() -> Route {

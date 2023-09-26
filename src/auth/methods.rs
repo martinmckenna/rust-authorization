@@ -1,5 +1,13 @@
+use crate::utils::validation;
 use actix_web::{web, HttpResponse};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize)]
+// #[derive(Debug)]
+pub struct Info {
+    username: String,
+    another: String,
+}
 
 #[derive(Serialize)]
 struct ProfileResponse {
@@ -40,12 +48,15 @@ pub async fn logout() -> HttpResponse {
     HttpResponse::Ok().json(web::Json(empty))
 }
 
-pub async fn register() -> HttpResponse {
+pub async fn register(request_body: web::Bytes) -> HttpResponse {
     let register = LoginResponse {
         token: "1234".to_string(),
         username: "dummy-user".to_string(),
     };
-    HttpResponse::Ok().json(web::Json(register))
+    match validation::validate_json(&request_body, &vec!["username", "password"]) {
+        Ok(_) => HttpResponse::Ok().json(web::Json(register)),
+        Err(err) => HttpResponse::Ok().json(web::Json(err)),
+    }
 }
 
 pub async fn extend_token() -> HttpResponse {
