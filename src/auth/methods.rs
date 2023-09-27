@@ -1,5 +1,9 @@
 use crate::utils::validation;
 use actix_web::{web, HttpResponse};
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -54,8 +58,37 @@ pub async fn register(request_body: web::Bytes) -> HttpResponse {
         username: "dummy-user".to_string(),
     };
     match validation::validate_json(&request_body, &vec!["username", "password"]) {
-        Ok(_) => HttpResponse::Ok().json(web::Json(register)),
-        Err(err) => HttpResponse::Ok().json(web::Json(err)),
+        Ok(validated_request_body) => {
+            // println!("{:?}", validated_request_body.get::<str>("password"));
+            let salt = SaltString::generate(&mut OsRng);
+            let argon2 = Argon2::default();
+            // let password: &[u8];
+            let password: &[u8] = match validated_request_body.get("password") {
+                Some(value) => value.as_str().unwrap_or("").as_bytes(),
+                None => "".as_bytes(),
+            };
+
+            match password.is_empty() {
+                true => HttpResponse::BadRequest().json(web::Json(validation::BadPayload {
+                    error: "Please pass a valid password string".to_string(),
+                    field: "password".to_string(),
+                })),
+                false => {
+                    /*
+                       we can now ensure the password is a valid string
+                    */
+                    let password_hash = match argon2.hash_password(password, &salt) {
+                        Ok(password_value) => password_value.to_string(),
+                        Err(_) => "".to_string(),
+                    };
+
+                    println!("{:?}", password_hash);
+
+                    HttpResponse::Ok().json(web::Json(register))
+                }
+            }
+        }
+        Err(err) => HttpResponse::BadRequest().json(web::Json(err)),
     }
 }
 
