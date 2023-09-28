@@ -85,6 +85,19 @@ Response:
 { }
 ```
 
+## Errors
+
+All errors from the API come in this shape. `field` is a key that typically maps to the problem field like `email` if your email is taken or `password` if your password doesn't meet requirements. `error` will be some free-form text explaining what is wrong.
+
+You may get back multiple objects at once, so you can map multiple errors to each field.
+
+```json
+Array<{
+  "error": "String",
+  "field": "String"
+}>
+```
+
 ## Migrations
 
 The steps to creating a migration and create an entity from it are as follows:
