@@ -1,3 +1,4 @@
+use crate::utils::jwt;
 use crate::utils::validation::{self, BadPayload};
 use crate::utils::AppState;
 use actix_web::{web, HttpResponse};
@@ -24,7 +25,14 @@ struct ProfileResponse {
 
 #[derive(Serialize)]
 struct LoginResponse {
-    // token: String,
+    username: String,
+    id: i32,
+    email: String,
+}
+
+#[derive(Serialize)]
+struct LoginResponseWithToken {
+    token: String,
     username: String,
     id: i32,
     email: String,
@@ -165,10 +173,19 @@ pub async fn register(
                     if new_user.is_some() {
                         let unwrapped_user = new_user.unwrap();
 
-                        HttpResponse::Ok().json(web::Json(LoginResponse {
+                        let token = match jwt::encode_token(
+                            unwrapped_user.id,
+                            app_state.lock().unwrap().jwt_secret.to_string(),
+                        ) {
+                            Ok(token_value) => token_value,
+                            Err(_) => "".to_string(),
+                        };
+
+                        HttpResponse::Ok().json(web::Json(LoginResponseWithToken {
                             username: unwrapped_user.username,
                             email: unwrapped_user.email,
                             id: unwrapped_user.id,
+                            token,
                         }))
                     } else {
                         HttpResponse::BadRequest().json(web::Json(validation::BadPayload {
