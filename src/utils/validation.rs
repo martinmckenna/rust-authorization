@@ -16,7 +16,7 @@ pub struct BadPayload {
 fn convert_json_to_hashmap(
     json: &web::Bytes,
 ) -> Result<HashMap<String, serde_json::Value>, Vec<BadPayload>> {
-    match serde_json::from_slice(json).map_err(|error| {
+    match serde_json::from_slice(json).map_err(|_| {
         vec![BadPayload {
             field: "payload".to_string(),
             error: "Invalid payload".to_string(),
