@@ -10,7 +10,7 @@
 
 ## Endpoints
 
-Upon running the server, you should have access to a few endpoints, which at the moment take no data and return static mock information:
+Upon running the server, you should have access to a few endpoints:
 
 ### `POST /register`:
 
