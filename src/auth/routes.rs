@@ -8,7 +8,7 @@ struct ProfileResponse {
 }
 
 fn get_profile() -> Route {
-    web::get().to(|| methods::get_profile())
+    web::get().to(methods::get_profile)
 }
 
 fn login() -> Route {
@@ -16,7 +16,7 @@ fn login() -> Route {
 }
 
 fn logout() -> Route {
-    web::post().to(|| methods::logout())
+    web::post().to(methods::logout)
 }
 
 fn register() -> Route {
@@ -28,7 +28,7 @@ fn extend_token() -> Route {
 }
 
 fn get_user() -> Route {
-    web::get().to(|| methods::get_user())
+    web::get().to(methods::get_user)
 }
 
 pub fn routes(cfg: &mut web::ServiceConfig) {

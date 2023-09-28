@@ -12,52 +12,77 @@
 
 Upon running the server, you should have access to a few endpoints, which at the moment take no data and return static mock information:
 
-`POST /register`:
+### `POST /register`:
+
+Request:
 
 ```json
 {
-  "username": "string",
-  "token": "string"
+  "username": "String",
+  "password": "String",
+  "email": "String"
 }
 ```
 
-`POST /login`:
+Response:
 
 ```json
 {
-  "username": "string",
-  "token": "string"
+  "username": "String",
+  "email": "String",
+  "token": "String",
+  "id": "Number"
 }
 ```
 
-`POST /logout`:
+### `POST /login`:
 
-```json
-{}
-```
-
-`GET /profile`:
+Request:
 
 ```json
 {
-  "username": "string"
+  "username": "String",
+  "password": "String",
 }
 ```
 
-`POST /token/extend`:
+Response:
 
 ```json
 {
-  "token": "string"
+  "username": "String",
+  "email": "String",
+  "token": "String",
+  "id": "Number"
 }
 ```
 
-`GET /users/:username`:
+### `GET /profile`:
+
+Request:
+
+Just `Bearer` token in the header
+
+Response:
 
 ```json
 {
-  "username": "string"
+  "username": "String",
+  "email": "String",
+  "id": "Number"
 }
+```
+
+### `POST /logout`:
+
+Request:
+
+Just `Bearer` token in the header
+
+Response:
+
+```json
+{ }
 ```
 
 ## Migrations

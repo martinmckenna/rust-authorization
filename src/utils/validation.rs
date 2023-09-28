@@ -1,12 +1,6 @@
 use actix_web::web;
-use serde::Serialize;
 use std::collections::HashMap;
-
-#[derive(Clone, Serialize)]
-pub struct BadPayload {
-    pub error: String,
-    pub field: String,
-}
+use crate::utils::BadPayload;
 
 /*
     converts JSON to a hashmap, so that the JSON keys can be validated

@@ -6,9 +6,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    sub: i32,
-    iat: u64,
-    exp: u64,
+    pub sub: i32,
+    pub iat: u64,
+    pub exp: u64,
 }
 
 pub fn encode_token(user_id: i32, jwt_secret: String) -> Result<String, errors::Error> {
@@ -24,9 +24,6 @@ pub fn encode_token(user_id: i32, jwt_secret: String) -> Result<String, errors::
         .duration_since(UNIX_EPOCH)
         .expect("time went backwards")
         .as_secs();
-
-    println!("{:?}", now_as_seconds);
-    println!("{:?}", seven_days_later_as_secs);
 
     let claims = Claims {
         sub: user_id,

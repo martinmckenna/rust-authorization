@@ -1,12 +1,57 @@
 use std::sync::Mutex;
 
 use actix_cors::Cors;
-use actix_web::{http, web, App, HttpServer};
+use actix_http::body::BoxBody;
+use actix_web::{
+    body::MessageBody,
+    dev::{ServiceRequest, ServiceResponse},
+    error::Error,
+    http, web, App, HttpServer,
+};
+use actix_web_lab::middleware::{from_fn, Next};
 use dotenvy;
 use migration::{Migrator, MigratorTrait};
 use rust_auth::auth;
+use rust_auth::utils::authorize::authorize_user;
 use rust_auth::utils::AppState;
 use sea_orm::Database;
+
+async fn auth_middleware(
+    req: ServiceRequest,
+    next: Next<BoxBody>,
+) -> Result<ServiceResponse<impl MessageBody>, Error> {
+    let auth_routes: Vec<&str> = vec!["/login", "/profile", "/logout"];
+
+    /*
+       try and authenticate the user for routes that require an
+       auth token
+    */
+    if auth_routes.iter().any(|e| req.path().contains(e)) {
+        match authorize_user(req).await {
+            Ok((authed_user, jwt, proxy_request)) => {
+                proxy_request
+                    .app_data::<web::Data<Mutex<AppState>>>()
+                    .unwrap()
+                    .lock()
+                    .unwrap()
+                    .user = Some(authed_user);
+                proxy_request
+                    .app_data::<web::Data<Mutex<AppState>>>()
+                    .unwrap()
+                    .lock()
+                    .unwrap()
+                    .jwt = Some(jwt);
+                next.call(proxy_request).await
+            }
+            Err((error, proxy_request)) => {
+                let unauth_error = actix_web::error::ErrorUnauthorized(web::Json(error));
+                Ok(proxy_request.error_response(unauth_error))
+            }
+        }
+    } else {
+        next.call(req).await
+    }
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -26,9 +71,12 @@ async fn main() -> std::io::Result<()> {
     let app_state = web::Data::new(Mutex::new(AppState {
         connection: conn,
         jwt_secret: jwt_secret,
+        user: None,
+        jwt: None,
     }));
     HttpServer::new(move || {
         App::new()
+            .wrap(from_fn(auth_middleware))
             .wrap(
                 Cors::default()
                     .allowed_methods(vec!["GET", "POST"])

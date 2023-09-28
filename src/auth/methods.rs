@@ -1,15 +1,17 @@
 use crate::utils::jwt;
-use crate::utils::validation::{self, BadPayload};
 use crate::utils::AppState;
+use crate::utils::{validation, BadPayload};
 use actix_web::{web, HttpResponse};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
 };
+use chrono::{DateTime, Utc};
 use entity::user::{Entity as UserEntity, TrimmedModel as TrimmedUserModel};
 use sea_orm::{ConnectionTrait, DatabaseBackend, DatabaseConnection, EntityTrait, Statement};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
+use std::time::SystemTime;
 
 #[derive(Deserialize, Serialize)]
 // #[derive(Debug)]
@@ -46,11 +48,8 @@ struct TokenResponse {
 #[derive(Serialize)]
 struct Empty {}
 
-pub async fn get_profile() -> HttpResponse {
-    let profile = ProfileResponse {
-        username: "dummy-user".to_string(),
-    };
-    HttpResponse::Ok().json(web::Json(profile))
+pub async fn get_profile(app_state: web::Data<Mutex<AppState>>) -> HttpResponse {
+    HttpResponse::Ok().json(web::Json(app_state.lock().unwrap().user.as_ref()))
 }
 
 pub async fn login() -> HttpResponse {
@@ -62,9 +61,32 @@ pub async fn login() -> HttpResponse {
     HttpResponse::Ok().json(web::Json(login))
 }
 
-pub async fn logout() -> HttpResponse {
+pub async fn logout(app_state: web::Data<Mutex<AppState>>) -> HttpResponse {
     let empty = Empty {};
-    HttpResponse::Ok().json(web::Json(empty))
+    let now = SystemTime::now();
+    let now: DateTime<Utc> = now.into();
+    let now = now.to_rfc3339();
+
+    let app_state_copy = app_state.lock().unwrap();
+
+    match app_state_copy
+        .connection
+        .query_one(Statement::from_sql_and_values(
+            DatabaseBackend::Postgres,
+            r#"
+                INSERT INTO "blacklist" (token, blacklisted_on)
+                VALUES ($1,$2)
+            "#,
+            [app_state_copy.jwt.clone().unwrap().into(), now.into()],
+        ))
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().json(web::Json(empty)),
+        Err(_) => HttpResponse::BadRequest().json(web::Json(BadPayload {
+            field: "payload".to_string(),
+            error: "Something went wrong.".to_string(),
+        })),
+    }
 }
 
 pub async fn register(
@@ -121,7 +143,7 @@ pub async fn register(
             }
 
             match password.is_empty() {
-                true => HttpResponse::BadRequest().json(web::Json(validation::BadPayload {
+                true => HttpResponse::BadRequest().json(web::Json(BadPayload {
                     error: "Please pass a valid password string".to_string(),
                     field: "password".to_string(),
                 })),
@@ -188,7 +210,7 @@ pub async fn register(
                             token,
                         }))
                     } else {
-                        HttpResponse::BadRequest().json(web::Json(validation::BadPayload {
+                        HttpResponse::BadRequest().json(web::Json(BadPayload {
                             error: "Error creating user".to_string(),
                             field: "payload".to_string(),
                         }))
