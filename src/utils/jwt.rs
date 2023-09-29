@@ -14,7 +14,7 @@ pub struct Claims {
 pub fn encode_token(user_id: i32, jwt_secret: String) -> Result<String, errors::Error> {
     let now = SystemTime::now();
     let seconds_in_a_day = 86400;
-    let seven_days_later = now + Duration::new(seconds_in_a_day * 7, 0);
+    let seven_days_later = now + Duration::new(seconds_in_a_day, 0);
 
     let now_as_seconds = now
         .duration_since(UNIX_EPOCH)

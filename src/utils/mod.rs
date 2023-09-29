@@ -13,11 +13,14 @@ pub struct BadPayload {
     pub field: String,
 }
 
+#[derive(Clone, Serialize, Debug, DisplayAsJson)]
+pub struct PayloadErrors(Vec<BadPayload>);
+
 #[derive(Debug)]
 pub struct AppState {
     /* Mutex is necessary to mutate safely across threads */
     pub connection: DatabaseConnection,
     pub jwt_secret: String,
     pub user: Option<TrimmedUser>,
-    pub jwt: Option<String>
+    pub jwt: Option<String>,
 }

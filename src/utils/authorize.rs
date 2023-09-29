@@ -1,4 +1,4 @@
-use crate::utils::{jwt, AppState, BadPayload};
+use crate::utils::{jwt, AppState, BadPayload, PayloadErrors};
 use actix_web::dev::ServiceRequest;
 use actix_web::web;
 use entity::blacklist::Entity as BlacklistEntity;
@@ -8,7 +8,7 @@ use std::sync::Mutex;
 
 pub async fn authorize_user(
     req: ServiceRequest,
-) -> Result<(TrimmedUserModel, String, ServiceRequest), (BadPayload, ServiceRequest)> {
+) -> Result<(TrimmedUserModel, String, ServiceRequest), (PayloadErrors, ServiceRequest)> {
     let authorization_header = req.headers().get("authorization");
     let app_data = req
         .app_data::<web::Data<Mutex<AppState>>>()
@@ -23,10 +23,10 @@ pub async fn authorize_user(
                 let split_token = token_as_string.split_whitespace().collect::<Vec<_>>();
 
                 if split_token.is_empty() || split_token[0] != "Bearer" || split_token.len() < 2 {
-                    return Err((BadPayload {
+                    return Err((PayloadErrors(vec![BadPayload{
                             error: "Please pass a valid authorization header beginning with \"Bearer\".".to_string(),
                             field: "header".to_string(),
-                        }, req));
+                        }]), req));
                 }
 
                 let maybe_token = BlacklistEntity::find()
@@ -44,10 +44,10 @@ pub async fn authorize_user(
 
                 if maybe_token.unwrap().is_some() {
                     return Err((
-                        BadPayload {
+                        PayloadErrors(vec![BadPayload {
                             error: "Token has already been revoked.".to_string(),
                             field: "token".to_string(),
-                        },
+                        }]),
                         req,
                     ));
                 }
@@ -70,36 +70,36 @@ pub async fn authorize_user(
                         {
                             Ok(value) => Ok((value.unwrap(), split_token[1].to_string(), req)),
                             Err(_) => Err((
-                                BadPayload {
+                                PayloadErrors(vec![BadPayload {
                                     error: "Could not find user.".to_string(),
                                     field: "payload".to_string(),
-                                },
+                                }]),
                                 req,
                             )),
                         }
                     }
                     Err(_) => Err((
-                        BadPayload {
+                        PayloadErrors(vec![BadPayload {
                             error: "Your token is either invalid or expired.".to_string(),
                             field: "header".to_string(),
-                        },
+                        }]),
                         req,
                     )),
                 }
             }
             Err(_) => Err((
-                BadPayload {
+                PayloadErrors(vec![BadPayload {
                     error: "Please pass a valid authorization header.".to_string(),
                     field: "header".to_string(),
-                },
+                }]),
                 req,
             )),
         },
         None => Err((
-            BadPayload {
+            PayloadErrors(vec![BadPayload {
                 error: "Please pass an authorization header.".to_string(),
                 field: "header".to_string(),
-            },
+            }]),
             req,
         )),
     }

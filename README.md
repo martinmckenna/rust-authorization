@@ -14,6 +14,8 @@ Upon running the server, you should have access to a few endpoints:
 
 ### `POST /register`:
 
+Creates an account and returns to you a JWT that is valid for 24 hours
+
 Request:
 
 ```json
@@ -37,6 +39,8 @@ Response:
 
 ### `POST /login`:
 
+Returns to you your profile information along with a JWT that is valid for 24 hours.
+
 Request:
 
 ```json
@@ -59,6 +63,8 @@ Response:
 
 ### `GET /profile`:
 
+Returns your profile information
+
 Request:
 
 Just `Bearer` token in the header
@@ -74,6 +80,8 @@ Response:
 ```
 
 ### `POST /logout`:
+
+Invalidates the send up JWT, so that you cannot make any more requests with it.
 
 Request:
 
@@ -97,6 +105,12 @@ Array<{
   "field": "String"
 }>
 ```
+
+examples:
+
+![error example](https://i.imgur.com/xNgkoCC.png)
+
+![error example 2](https://i.imgur.com/lLxQSHY.png)
 
 ## Migrations
 

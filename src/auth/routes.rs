@@ -12,7 +12,7 @@ fn get_profile() -> Route {
 }
 
 fn login() -> Route {
-    web::post().to(|| methods::login())
+    web::post().to(methods::login)
 }
 
 fn logout() -> Route {

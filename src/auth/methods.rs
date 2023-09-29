@@ -52,7 +52,7 @@ pub async fn get_profile(app_state: web::Data<Mutex<AppState>>) -> HttpResponse 
     HttpResponse::Ok().json(web::Json(app_state.lock().unwrap().user.as_ref()))
 }
 
-pub async fn login() -> HttpResponse {
+pub async fn login(app_state: web::Data<Mutex<AppState>>) -> HttpResponse {
     let login = LoginResponse {
         username: "dummy-user".to_string(),
         email: "dummy@email.com".to_string(),
@@ -82,10 +82,10 @@ pub async fn logout(app_state: web::Data<Mutex<AppState>>) -> HttpResponse {
         .await
     {
         Ok(_) => HttpResponse::Ok().json(web::Json(empty)),
-        Err(_) => HttpResponse::BadRequest().json(web::Json(BadPayload {
+        Err(_) => HttpResponse::BadRequest().json(web::Json(vec![BadPayload {
             field: "payload".to_string(),
             error: "Something went wrong.".to_string(),
-        })),
+        }])),
     }
 }
 
@@ -130,23 +130,23 @@ pub async fn register(
 
             if maybe_duplicate_user.is_some() {
                 if maybe_duplicate_user.unwrap().email == email {
-                    return HttpResponse::BadRequest().json(web::Json(BadPayload {
+                    return HttpResponse::BadRequest().json(web::Json(vec![BadPayload {
                         field: "email".to_string(),
                         error: "Email already exists".to_string(),
-                    }));
+                    }]));
                 } else {
-                    return HttpResponse::BadRequest().json(web::Json(BadPayload {
+                    return HttpResponse::BadRequest().json(web::Json(vec![BadPayload {
                         field: "username".to_string(),
                         error: "Username already exists".to_string(),
-                    }));
+                    }]));
                 }
             }
 
             match password.is_empty() {
-                true => HttpResponse::BadRequest().json(web::Json(BadPayload {
+                true => HttpResponse::BadRequest().json(web::Json(vec![BadPayload {
                     error: "Please pass a valid password string".to_string(),
                     field: "password".to_string(),
-                })),
+                }])),
                 false => {
                     /*
                        we can now ensure the password is a valid string
@@ -210,10 +210,10 @@ pub async fn register(
                             token,
                         }))
                     } else {
-                        HttpResponse::BadRequest().json(web::Json(BadPayload {
+                        HttpResponse::BadRequest().json(web::Json(vec![BadPayload {
                             error: "Error creating user".to_string(),
                             field: "payload".to_string(),
-                        }))
+                        }]))
                     }
                 }
             }
