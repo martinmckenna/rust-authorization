@@ -79,6 +79,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(from_fn(auth_middleware))
             .wrap(
                 Cors::default()
+                    .send_wildcard()
                     .allowed_methods(vec!["GET", "POST"])
                     .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
                     .allowed_header(http::header::CONTENT_TYPE)
