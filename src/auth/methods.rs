@@ -3,22 +3,15 @@ use crate::utils::AppState;
 use crate::utils::{validation, BadPayload};
 use actix_web::{web, HttpResponse};
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
 use chrono::{DateTime, Utc};
-use entity::user::{Entity as UserEntity, TrimmedModel as TrimmedUserModel};
+use entity::user::{Entity as UserEntity, Model as UserModel, TrimmedModel as TrimmedUserModel};
 use sea_orm::{ConnectionTrait, DatabaseBackend, DatabaseConnection, EntityTrait, Statement};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::sync::Mutex;
 use std::time::SystemTime;
-
-#[derive(Deserialize, Serialize)]
-// #[derive(Debug)]
-pub struct Info {
-    username: String,
-    another: String,
-}
 
 #[derive(Serialize)]
 struct ProfileResponse {
@@ -52,13 +45,78 @@ pub async fn get_profile(app_state: web::Data<Mutex<AppState>>) -> HttpResponse 
     HttpResponse::Ok().json(web::Json(app_state.lock().unwrap().user.as_ref()))
 }
 
-pub async fn login(app_state: web::Data<Mutex<AppState>>) -> HttpResponse {
-    let login = LoginResponse {
-        username: "dummy-user".to_string(),
-        email: "dummy@email.com".to_string(),
-        id: 12,
-    };
-    HttpResponse::Ok().json(web::Json(login))
+pub async fn login(
+    request_body: web::Bytes,
+    app_state: web::Data<Mutex<AppState>>,
+) -> HttpResponse {
+    match validation::validate_json(&request_body, &vec!["username", "password"]) {
+        Ok(validated_request_body) => {
+            let passed_password: &[u8] = match validated_request_body.get("password") {
+                Some(value) => value.as_str().unwrap_or("").as_bytes(),
+                None => "".as_bytes(),
+            };
+            let username = match validated_request_body.get("username") {
+                Some(value) => value.as_str().unwrap_or("").to_string(),
+                None => "".to_string(),
+            };
+            let maybe_user: Option<UserModel> = match UserEntity::find()
+                .from_raw_sql(Statement::from_sql_and_values(
+                    DatabaseBackend::Postgres,
+                    r#"
+                        SELECT "user"."id", "user"."email", "user"."username", "user"."password"
+                        FROM "user" 
+                        WHERE "username" = $1
+                    "#,
+                    [username.clone().into()],
+                ))
+                .one::<DatabaseConnection>(&app_state.lock().unwrap().connection)
+                .await
+            {
+                Ok(value) => value,
+                Err(_) => None,
+            };
+
+            if maybe_user.is_none() {
+                return HttpResponse::BadRequest().json(web::Json(vec![BadPayload {
+                    field: "username".to_string(),
+                    error: "User does not exist.".to_string(),
+                }]));
+            }
+
+            let unwrapped_user = maybe_user.unwrap();
+
+            match PasswordHash::new(&unwrapped_user.password.to_string()) {
+                Ok(parsed_password) => {
+                    match Argon2::default().verify_password(passed_password, &parsed_password) {
+                        Ok(_) => {
+                            let token = match jwt::encode_token(
+                                unwrapped_user.id,
+                                app_state.lock().unwrap().jwt_secret.to_string(),
+                            ) {
+                                Ok(token_value) => token_value,
+                                Err(_) => "".to_string(),
+                            };
+                            HttpResponse::Ok().json(web::Json(LoginResponseWithToken {
+                                username: unwrapped_user.username,
+                                email: unwrapped_user.email,
+                                id: unwrapped_user.id,
+                                token: token.to_string(),
+                            }))
+                        }
+                        Err(_) => HttpResponse::BadRequest().json(web::Json(vec![BadPayload {
+                            field: "password".to_string(),
+                            error: "Invalid password.".to_string(),
+                        }])),
+                    }
+                }
+                Err(_) => HttpResponse::BadRequest().json(web::Json(vec![BadPayload {
+                    field: "password".to_string(),
+                    error: "Error parsing password.".to_string(),
+                }])),
+            }
+        }
+        Err(err) => HttpResponse::BadRequest().json(web::Json(err)),
+    }
 }
 
 pub async fn logout(app_state: web::Data<Mutex<AppState>>) -> HttpResponse {

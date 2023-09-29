@@ -20,7 +20,7 @@ async fn auth_middleware(
     req: ServiceRequest,
     next: Next<BoxBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, Error> {
-    let auth_routes: Vec<&str> = vec!["/login", "/profile", "/logout"];
+    let auth_routes: Vec<&str> = vec!["/profile", "/logout"];
 
     /*
        try and authenticate the user for routes that require an
